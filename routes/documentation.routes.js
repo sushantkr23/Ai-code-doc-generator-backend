@@ -9,21 +9,20 @@ import {
     generateFromCode,
     generatePDFFromCode
 } from '../controllers/documentation.controller.js';
-import { authenticateToken } from '../middlewares/auth.middleware.js';
+import { authenticateToken, optionalAuth } from '../middlewares/auth.middleware.js';
 
 const documentationRouter = express.Router();
 
-// All routes require authentication
-documentationRouter.use(authenticateToken);
+// Public routes (no login required)
+documentationRouter.post('/generate-from-code', optionalAuth, generateFromCode);
+documentationRouter.post('/generate-pdf', optionalAuth, generatePDFFromCode);
 
-// Documentation routes
-documentationRouter.post('/generate/:projectId', generateDocumentation);
-documentationRouter.post('/generate-from-code', generateFromCode);
-documentationRouter.post('/generate-pdf', generatePDFFromCode);
-documentationRouter.get('/', getUserDocumentations);
-documentationRouter.get('/:docId', getDocumentationById);
-documentationRouter.get('/:docId/download', downloadDocumentation);
-documentationRouter.delete('/:docId', deleteDocumentation);
-documentationRouter.post('/:docId/regenerate', regenerateDocumentation);
+// Protected routes (login required)
+documentationRouter.post('/generate/:projectId', authenticateToken, generateDocumentation);
+documentationRouter.get('/', authenticateToken, getUserDocumentations);
+documentationRouter.get('/:docId', authenticateToken, getDocumentationById);
+documentationRouter.get('/:docId/download', authenticateToken, downloadDocumentation);
+documentationRouter.delete('/:docId', authenticateToken, deleteDocumentation);
+documentationRouter.post('/:docId/regenerate', authenticateToken, regenerateDocumentation);
 
 export default documentationRouter;

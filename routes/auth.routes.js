@@ -1,8 +1,6 @@
 import express from "express"
 import { signUp, Login, logOut, googleAuth, googleCallback, getCurrentUser, updateProfile } from "../controllers/auth.controller.js";
 import { authenticateToken } from "../middlewares/auth.middleware.js";
-import passport from "passport";
-import "../config/passport.js";
 
 const authRouter = express.Router()
 

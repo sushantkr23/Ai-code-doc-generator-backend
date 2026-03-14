@@ -1,6 +1,7 @@
 import Documentation from '../models/documentation.model.js';
 import UML from '../models/uml.model.js';
 import Project from '../models/project.model.js';
+import ChatHistory from '../models/chat-history.model.js';
 
 export const getUserHistory = async (req, res) => {
     try {
@@ -12,8 +13,8 @@ export const getUserHistory = async (req, res) => {
         let history = [];
 
         if (!type || type === 'all') {
-            // Get all activities
-            const [projects, docs, umls] = await Promise.all([
+            // Get all activities including chat history
+            const [projects, docs, umls, chats] = await Promise.all([
                 Project.find({ userId: req.user._id })
                     .select('name description status createdAt updatedAt')
                     .sort({ createdAt: -1 })
@@ -27,6 +28,10 @@ export const getUserHistory = async (req, res) => {
                     .populate('projectId', 'name')
                     .select('title diagramType createdAt')
                     .sort({ createdAt: -1 })
+                    .limit(limit),
+                ChatHistory.find({ userId: req.user._id })
+                    .select('title language fileName createdAt codeLength generationType')
+                    .sort({ createdAt: -1 })
                     .limit(limit)
             ]);
 
@@ -34,7 +39,8 @@ export const getUserHistory = async (req, res) => {
             history = [
                 ...projects.map(p => ({ ...p.toObject(), type: 'project' })),
                 ...docs.map(d => ({ ...d.toObject(), type: 'documentation' })),
-                ...umls.map(u => ({ ...u.toObject(), type: 'uml' }))
+                ...umls.map(u => ({ ...u.toObject(), type: 'uml' })),
+                ...chats.map(c => ({ ...c.toObject(), type: 'chat', name: c.title }))
             ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
              .slice(0, limit);
         } else {
@@ -229,6 +235,39 @@ export const getHistoryItemDetail = async (req, res) => {
         let item = null;
 
         switch (type) {
+            case 'chat':
+                console.log('Fetching chat history:', id);
+                item = await ChatHistory.findOne({ 
+                    _id: id, 
+                    userId: req.user._id 
+                });
+                
+                if (item) {
+                    console.log('Chat found:', {
+                        id: item._id,
+                        hasCode: !!item.code,
+                        codeLength: item.code?.length || 0,
+                        hasDoc: !!item.documentation,
+                        docLength: item.documentation?.length || 0
+                    });
+                    
+                    const response = {
+                        ...item.toObject(),
+                        type: 'chat',
+                        codeSnippet: {
+                            code: item.code,
+                            language: item.language
+                        },
+                        content: item.documentation
+                    };
+                    
+                    console.log('Sending response with codeSnippet:', !!response.codeSnippet);
+                    return res.status(200).json(response);
+                }
+                
+                console.log('Chat not found');
+                break;
+            
             case 'documentation':
                 item = await Documentation.findOne({ 
                     _id: id, 

@@ -165,11 +165,13 @@ export const generateFromCode = async (req, res) => {
         }
 
         console.log('Generating documentation from code snippet...');
+        console.log('User logged in:', req.user ? 'Yes' : 'No');
         
         let documentation;
         
         if (req.user && req.user._id) {
             // User is logged in - save to database
+            console.log('✅ Generating and saving documentation for logged-in user');
             documentation = await documentationService.generateFromCodeSnippet(
                 code,
                 language,
@@ -201,6 +203,7 @@ export const generateFromCode = async (req, res) => {
             });
         } else {
             // Guest user - generate documentation without saving
+            console.log('👥 Generating documentation for guest user (no save)');
             const geminiService = (await import('../services/gemini.service.js')).default;
             const docContent = await geminiService.generateDetailedDocumentation(
                 code,
@@ -209,7 +212,7 @@ export const generateFromCode = async (req, res) => {
             );
             
             res.status(200).json({
-                message: 'Documentation generated successfully',
+                message: 'Documentation generated successfully (not saved)',
                 documentation: {
                     title: `${fileName || 'code-snippet'} Documentation`,
                     content: docContent,
@@ -230,11 +233,13 @@ export const generateFromCode = async (req, res) => {
 export const generatePDFFromCode = async (req, res) => {
     try {
         console.log('PDF generation request received');
+        console.log('User logged in:', req.user ? 'Yes' : 'No');
         const { code, language, fileName, documentation } = req.body;
         
-        // FIXED: Generate documentation if not provided
+        // Generate documentation if not provided
         let docContent = documentation;
         if (!docContent && code && language) {
+            console.log('📝 Generating documentation for PDF...');
             const geminiService = (await import('../services/gemini.service.js')).default;
             docContent = await geminiService.generateDetailedDocumentation(
                 code,
@@ -255,7 +260,7 @@ export const generatePDFFromCode = async (req, res) => {
             docFileName
         );
 
-        console.log('PDF generated successfully:', pdfResult.fileName);
+        console.log('✅ PDF generated successfully:', pdfResult.fileName);
 
         // Verify file exists
         if (!fs.existsSync(pdfResult.filePath)) {
@@ -263,6 +268,7 @@ export const generatePDFFromCode = async (req, res) => {
         }
 
         const fileStats = fs.statSync(pdfResult.filePath);
+        console.log('PDF size:', (fileStats.size / 1024).toFixed(2), 'KB');
         
         // Set proper headers for PDF download
         res.setHeader('Content-Type', 'application/pdf');
@@ -281,13 +287,13 @@ export const generatePDFFromCode = async (req, res) => {
         });
         
         fileStream.on('end', () => {
-            console.log('PDF file sent successfully');
+            console.log('✅ PDF file sent successfully');
             // Clean up temporary file after a delay
             setTimeout(() => {
                 try {
                     if (fs.existsSync(pdfResult.filePath)) {
                         fs.unlinkSync(pdfResult.filePath);
-                        console.log('Temporary PDF file cleaned up');
+                        console.log('🗑️ Temporary PDF file cleaned up');
                     }
                 } catch (cleanupError) {
                     console.warn('Failed to cleanup PDF file:', cleanupError.message);

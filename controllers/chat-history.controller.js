@@ -15,9 +15,27 @@ export const getUserHistory = async (req, res) => {
 export const getChatById = async (req, res) => {
     try {
         const { chatId } = req.params;
+        console.log('Fetching chat history:', chatId, 'for user:', req.user._id);
+        
         const chat = await chatHistoryService.getChatById(chatId, req.user._id);
+        
+        if (!chat) {
+            console.log('Chat not found');
+            return res.status(404).json({ message: 'Chat history not found' });
+        }
+        
+        console.log('Chat found:', {
+            id: chat._id,
+            title: chat.title,
+            hasCode: !!chat.code,
+            codeLength: chat.code?.length || 0,
+            hasDocumentation: !!chat.documentation,
+            docLength: chat.documentation?.length || 0
+        });
+        
         res.status(200).json(chat);
     } catch (error) {
+        console.error('Error fetching chat:', error);
         res.status(404).json({ message: error.message });
     }
 };

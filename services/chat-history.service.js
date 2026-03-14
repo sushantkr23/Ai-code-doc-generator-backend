@@ -3,6 +3,15 @@ import ChatHistory from '../models/chat-history.model.js';
 class ChatHistoryService {
     async saveChat(userId, data) {
         try {
+            console.log('💾 Saving chat history for user:', userId);
+            console.log('Data received:', {
+                language: data.language,
+                fileName: data.fileName,
+                codeLength: data.code?.length || 0,
+                docLength: data.documentation?.length || 0,
+                generationType: data.generationType
+            });
+            
             const title = this.generateTitle(data.code, data.language);
             
             const chatHistory = new ChatHistory({
@@ -17,8 +26,10 @@ class ChatHistoryService {
             });
 
             await chatHistory.save();
+            console.log('✅ Chat history saved successfully:', chatHistory._id);
             return chatHistory;
         } catch (error) {
+            console.error('❌ Failed to save chat history:', error);
             throw new Error(`Failed to save chat history: ${error.message}`);
         }
     }

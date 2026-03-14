@@ -5,6 +5,7 @@ import connectDb from "./config/db.js"
 import cookieParser from "cookie-parser"
 import session from "express-session"
 import passport from "passport"
+import "./config/passport.js"
 import fs from "fs"
 import path from "path"
 import { fileURLToPath } from 'url'

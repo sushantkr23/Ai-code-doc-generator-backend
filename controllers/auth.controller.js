@@ -91,18 +91,14 @@ export const logOut = async (req,res)=>{
 
 // Google OAuth
 export const googleAuth = (req, res, next) => {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        return res.status(400).json({ message: 'Google OAuth not configured' });
-    }
-    return passport.authenticate('google', {
+    console.log('🔑 Google Auth initiated');
+    passport.authenticate('google', {
         scope: ['profile', 'email']
     })(req, res, next);
 };
 
 export const googleCallback = async (req, res, next) => {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        return res.status(400).json({ message: 'Google OAuth not configured' });
-    }
+    console.log('🔙 Google Callback received');
     
     passport.authenticate('google', async (err, user) => {
         try {
